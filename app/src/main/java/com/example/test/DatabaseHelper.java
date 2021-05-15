@@ -19,18 +19,18 @@ import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
+    // Error TAG
     protected static String TAG = "DatabaseHelper";
 
-    private static String databasePath = "";
-    private static String databaseName = "market.db";
-    private static String tableName = "market";
+    private static String databasePath = ""; // 데이터베이스 경로
+    private static String databaseName = "market.db"; // 데이터베이스 이름
+    private static String tableName = "market"; // 테이블 이름
 
     private final Context mContext;
     private SQLiteDatabase mDatabase;
 
     public DatabaseHelper(Context context){
-
-        super(context, databaseName, null, 1); // version of database
+        super(context, databaseName, null, 1);
 
         if (Build.VERSION.SDK_INT >= 17){
             databasePath = context.getApplicationInfo().dataDir + "/databases/";
@@ -42,31 +42,49 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         this.mContext = context;
     }
 
-    public DatabaseHelper CreateDatabase() throws SQLException{
+    // 데이터베이스 파일 열기
+    public boolean OpenDatabaseFile() throws SQLException {
 
-        if (!CheckDatabase()){
-            this.getReadableDatabase();
-            this.close();
-
-            try{
-                CopyDatabase();
-                Log.e(TAG,  "[SUCCESS] " + databaseName + " are Created");
-            }
-            catch(IOException ioException){
-                Log.e(TAG, "[ERROR] " + "Unable to create " + databaseName);
-                throw new Error(TAG);
-            }
+        if(!CheckDatabaseFileExist()){
+            CreateDatabase();
         }
 
-        return this;
+        String mPath = databasePath + databaseName;
+        try{
+            mDatabase = SQLiteDatabase.openDatabase(mPath, null, SQLiteDatabase.CREATE_IF_NECESSARY);
+            Log.e(TAG,  "[SUCCESS] " + databaseName + " are Opened");
+        }
+        catch(SQLException sqlException){
+            Log.e(TAG, "[ERROR]" + "Can't Open Database");
+        }
+        return mDatabase != null;
     }
 
-    public boolean CheckDatabase(){
+    // 데이터베이스 파일 존재 여부 확인
+    public boolean CheckDatabaseFileExist(){
         File file = new File(databasePath + databaseName);
         return file.exists();
     }
 
-    public void CopyDatabase() throws IOException{
+    // Database 만들기
+    public void CreateDatabase() throws SQLException{
+
+        this.getReadableDatabase();
+        this.close();
+
+        try{
+            CopyDatabaseFile();
+            Log.e(TAG,  "[SUCCESS] " + databaseName + " are Created");
+        }
+        catch(IOException ioException){
+            // Error Message
+            Log.e(TAG, "[ERROR] " + "Unable to create " + databaseName);
+            throw new Error(TAG);
+        }
+    }
+
+    // 데이터베이스 복사
+    public void CopyDatabaseFile() throws IOException{
 
         InputStream inputStream  = mContext.getAssets().open(databaseName);
         String outputFileName = databasePath + databaseName;
@@ -83,36 +101,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         inputStream.close();
     }
 
-    public boolean OpenDatabase(){
-        String mPath = databasePath + databaseName;
-        mDatabase = SQLiteDatabase.openDatabase(mPath, null, SQLiteDatabase.CREATE_IF_NECESSARY);
 
-        return mDatabase != null;
-    }
-
-    // Read Table Data
+    // 테이블 정보 가져오기
     public List getTableData() {
 
         try{
+            // 테이블 정보를 저장할 List
             List mList = new ArrayList();
 
-            // Query
+            // 쿼리
             String sql = "SELECT * FROM " + tableName;
 
-            // use Cursor to read table data
+            // 테이블 데이터를 읽기 위한 Cursor
             Cursor mCursor = mDatabase.rawQuery(sql, null);
 
-            // read to the end
+            // 테이블 끝까지 읽기
             if (mCursor != null){
 
-                // read to end of the column
+                // 다음 Row로 이동
                 while(mCursor.moveToNext()){
 
+                    // 해당 Row 저장
                     Market market = new Market();
 
-                    // Save database - Record data
-                    // int _id / String storeName / String franchise
-                    // double latitude / double longitude / String address
                     market.setId(mCursor.getInt(0));
                     market.setStoreName(mCursor.getString(1));
                     market.setFranchise(mCursor.getString(2));
@@ -120,7 +131,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     market.setLongitude(mCursor.getDouble(4));
                     market.setAddress(mCursor.getString(5));
 
-                    // push data to list
+                    // List에 해당 Row 추가
                     mList.add(market);
                 }
 
@@ -136,13 +147,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     }
 
-
-    // Close Database
-    @Override
-    public synchronized void close(){
+    // 데이터베이스 닫기
+    public void CloseDatabaseFile(){
         if (mDatabase != null){
             mDatabase.close();
         }
+    }
+
+    @Override
+    public synchronized void close(){
+        CloseDatabaseFile();
         super.close();
     }
 

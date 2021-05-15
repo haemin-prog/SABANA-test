@@ -6,6 +6,7 @@ import android.Manifest;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.LinearLayout;
 
 import com.skt.Tmap.TMapGpsManager;
@@ -87,13 +88,12 @@ public class MainActivity extends AppCompatActivity implements TMapGpsManager.on
     private void initLoadMarketDatabase(){
 
         DatabaseHelper databaseHelper = new DatabaseHelper(getApplicationContext());
-        databaseHelper.CreateDatabase();
-        databaseHelper.OpenDatabase();
+        databaseHelper.OpenDatabaseFile();
 
         marketList = databaseHelper.getTableData();
+        Log.e("test", String.valueOf(marketList.size()));
 
         databaseHelper.close();
-
     }
 
 }
