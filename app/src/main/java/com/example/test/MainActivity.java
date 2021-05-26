@@ -97,7 +97,6 @@ public class MainActivity extends AppCompatActivity implements TMapGpsManager.on
     }
 
     public List<Market> initLoadMarketDatabase(){
-
         DatabaseHelper databaseHelper = new DatabaseHelper(getApplicationContext());
         databaseHelper.OpenDatabaseFile();
 
